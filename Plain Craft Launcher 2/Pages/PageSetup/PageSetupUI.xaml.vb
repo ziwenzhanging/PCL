@@ -446,7 +446,8 @@ Refresh:
                 FrmMain.BtnTitleSelect1.Visibility = If(Not HiddenForceShow AndAlso Settings.Get(Of Boolean)("UiHiddenPageDownload"), Visibility.Collapsed, Visibility.Visible)
                 FrmMain.BtnTitleSelect2.Visibility = Visibility.Collapsed 'If(Not HiddenForceShow AndAlso Settings.Get(Of Boolean)("UiHiddenPageLink"), Visibility.Collapsed, Visibility.Visible)
                 FrmMain.BtnTitleSelect3.Visibility = If(Not HiddenForceShow AndAlso Settings.Get(Of Boolean)("UiHiddenPageSetup"), Visibility.Collapsed, Visibility.Visible)
-                FrmMain.BtnTitleSelect4.Visibility = If(Not HiddenForceShow AndAlso Settings.Get(Of Boolean)("UiHiddenPageOther"), Visibility.Collapsed, Visibility.Visible)
+                '「更多」页面已被移除，入口始终隐藏
+                FrmMain.BtnTitleSelect4.Visibility = If(CreativePixelEdition OrElse (Not HiddenForceShow AndAlso Settings.Get(Of Boolean)("UiHiddenPageOther")), Visibility.Collapsed, Visibility.Visible)
             End If
             '功能
             FrmLaunchLeft.RefreshButtonsUI()
@@ -460,15 +461,18 @@ Refresh:
             '设置子页面
             If FrmSetupLeft IsNot Nothing Then
                 FrmSetupLeft.ItemLaunch.Visibility = If(Not HiddenForceShow AndAlso Settings.Get(Of Boolean)("UiHiddenSetupLaunch"), Visibility.Collapsed, Visibility.Visible)
-                FrmSetupLeft.ItemUI.Visibility = If(Not HiddenForceShow AndAlso Settings.Get(Of Boolean)("UiHiddenSetupUi"), Visibility.Collapsed, Visibility.Visible)
+                FrmSetupLeft.ItemUI.Visibility = If(CreativePixelEdition OrElse (Not HiddenForceShow AndAlso Settings.Get(Of Boolean)("UiHiddenSetupUi")), Visibility.Collapsed, Visibility.Visible)
                 FrmSetupLeft.ItemLink.Visibility = Visibility.Collapsed 'If(Not HiddenForceShow AndAlso Settings.Get(Of Boolean)("UiHiddenSetupLink"), Visibility.Collapsed, Visibility.Visible)
                 FrmSetupLeft.ItemSystem.Visibility = If(Not HiddenForceShow AndAlso Settings.Get(Of Boolean)("UiHiddenSetupSystem"), Visibility.Collapsed, Visibility.Visible)
+                '「关于」页面从「更多」页面挪到了这里（仅 CreativePixel 版）
+                FrmSetupLeft.ItemAbout.Visibility = If(CreativePixelEdition, Visibility.Visible, Visibility.Collapsed)
                 '隐藏左边选择卡
                 Dim AvaliableCount As Integer = 0
                 If Not Settings.Get(Of Boolean)("UiHiddenSetupLaunch") Then AvaliableCount += 1
-                If Not Settings.Get(Of Boolean)("UiHiddenSetupUi") Then AvaliableCount += 1
+                If Not CreativePixelEdition AndAlso Not Settings.Get(Of Boolean)("UiHiddenSetupUi") Then AvaliableCount += 1
                 'If Not Settings.Get(Of Boolean)("UiHiddenSetupLink") Then AvaliableCount += 1
                 If Not Settings.Get(Of Boolean)("UiHiddenSetupSystem") Then AvaliableCount += 1
+                If CreativePixelEdition Then AvaliableCount += 1 '关于
                 FrmSetupLeft.PanItem.Visibility = If(AvaliableCount < 2 AndAlso Not HiddenForceShow, Visibility.Collapsed, Visibility.Visible)
             End If
             '更多子页面

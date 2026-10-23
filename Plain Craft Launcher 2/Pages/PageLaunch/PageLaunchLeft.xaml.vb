@@ -130,7 +130,7 @@ Public Class PageLaunchLeft
             Case McLoginType.Nide
                 LabLaunchingMethod.Text = "统一通行证"
             Case McLoginType.Auth
-                LabLaunchingMethod.Text = "Authlib-Injector"
+                LabLaunchingMethod.Text = If(CreativePixelEdition, "LittleSkin 登录", "Authlib-Injector")
         End Select
         '初始化页面
         LabLaunchingName.Text = McInstanceSelected.Name
@@ -289,16 +289,19 @@ Public Class PageLaunchLeft
     ''' 确认当前显示的子页面正确，并刷新该页面。
     ''' </summary>
     Public Sub RefreshPage(KeepInput As Boolean, Anim As Boolean)
+        'CreativePixel 版：登录方式固定为 LittleSkin，正版与离线登录已被移除
+        If CreativePixelEdition Then ForceLittleSkinAuth()
         '获取页面的可用种类并回写缓存
         Dim Type As PageType
         Dim LoginPageType As Integer
         If McInstanceSelected IsNot Nothing Then
             LoginPageType = Settings.Get(Of Integer)("VersionServerLogin", Instance:=McInstanceSelected)
-            '缓存当前版本的页面种类，下一次打开 McInstanceSelected 为空时才能加载出正确的页面
-            Settings.Set("LoginPageType", LoginPageType)
         Else
             LoginPageType = Settings.Get(Of Integer)("LoginPageType")
         End If
+        If CreativePixelEdition Then LoginPageType = 4 '第三方登录：Authlib-Injector（LittleSkin）
+        '缓存当前版本的页面种类，下一次打开 McInstanceSelected 为空时才能加载出正确的页面
+        Settings.Set("LoginPageType", LoginPageType)
         Select Case LoginPageType
             Case 0 '正版或离线
 UnknownType:

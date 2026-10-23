@@ -206,9 +206,6 @@
     <Compile Include="Controls\MyIconTextButton.xaml.vb">
       <DependentUpon>MyIconTextButton.xaml</DependentUpon>
     </Compile>
-
-
-
     <Compile Include="Controls\MyVirtualizingElement.vb" />
     <Compile Include="Modules\Base\PclLogger.vb" />
     <Compile Include="Modules\Resource\LocalResourceFile.vb" />
@@ -495,7 +492,6 @@
       <DependentUpon>FormMain.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-
     <Page Include="Pages\PageInstance\MyLocalModItem.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -948,7 +944,12 @@
   <ItemGroup>
     <Resource Include="Images\Heads\ChongQing.png" />
     <Resource Include="Images\Heads\HerobrineXia.png" />
-
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\Heads\zzwhead.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\ServerLogo.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

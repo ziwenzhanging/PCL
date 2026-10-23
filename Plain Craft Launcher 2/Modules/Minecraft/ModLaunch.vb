@@ -300,6 +300,32 @@ NextInner:
         Ms = 5
     End Enum
 
+    'CreativePixel 版强制使用的第三方登录服务器（LittleSkin）
+    Public Const LittleSkinAuthServer As String = "https://littleskin.cn/api/yggdrasil"
+    Public Const LittleSkinAuthRegister As String = "https://littleskin.cn/auth/register"
+    Public Const LittleSkinAuthName As String = "LittleSkin 登录"
+
+    ''' <summary>
+    ''' CreativePixel 版：把登录方式与认证服务器固定为 LittleSkin（Authlib-Injector）。
+    ''' 正版登录与离线登录在此版本中已被移除。
+    ''' </summary>
+    Public Sub ForceLittleSkinAuth()
+        If Not CreativePixelEdition Then Return
+        Settings.Set("LoginType", McLoginType.Auth)
+        If Settings.Get(Of String)("CacheAuthServerServer") <> LittleSkinAuthServer Then
+            Settings.Set("CacheAuthServerServer", LittleSkinAuthServer)
+            Settings.Set("CacheAuthServerRegister", LittleSkinAuthRegister)
+            Settings.Set("CacheAuthServerName", LittleSkinAuthName)
+        End If
+        If McInstanceSelected Is Nothing Then Return
+        If Settings.Get(Of Integer)("VersionServerLogin", Instance:=McInstanceSelected) = 4 AndAlso
+           Settings.Get(Of String)("VersionServerAuthServer", Instance:=McInstanceSelected) = LittleSkinAuthServer Then Return
+        Settings.Set("VersionServerLogin", 4, Instance:=McInstanceSelected)
+        Settings.Set("VersionServerAuthServer", LittleSkinAuthServer, Instance:=McInstanceSelected)
+        Settings.Set("VersionServerAuthRegister", LittleSkinAuthRegister, Instance:=McInstanceSelected)
+        Settings.Set("VersionServerAuthName", LittleSkinAuthName, Instance:=McInstanceSelected)
+    End Sub
+
     '各个登录方式的对应数据
     Public MustInherit Class McLoginData
         ''' <summary>

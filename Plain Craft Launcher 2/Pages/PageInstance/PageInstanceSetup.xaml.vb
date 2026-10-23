@@ -358,6 +358,13 @@ PreFin:
     End Sub
     Private Sub UpdateServerLoginUI()
         If LabServerNide Is Nothing Then Return
+        'CreativePixel 版：登录方式固定为 LittleSkin，整块服务器配置不可见
+        If CreativePixelEdition Then
+            PanServerConfig.Visibility = Visibility.Collapsed
+            BtnServerAuthLittle.Visibility = Visibility.Collapsed
+            CardServer.TriggerForceResize()
+            Return
+        End If
         Dim Type = ComboServerLogin.SelectedIndex
         LabServerNide.Visibility = If(Type = 3, Visibility.Visible, Visibility.Collapsed)
         TextServerNide.Visibility = If(Type = 3, Visibility.Visible, Visibility.Collapsed)

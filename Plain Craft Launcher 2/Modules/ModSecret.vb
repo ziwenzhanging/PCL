@@ -5,7 +5,7 @@ Friend Module ModSecret
     '标注 PCL 的不同分支，仅用于替换标记
     Public Const VersionBranchMain As String = "OpenSource"
     '在开源版的注册表与常规版的注册表隔离，以防数据冲突
-    Public Const RegFolder As String = "PCLDebug"
+    Public Const RegFolder As String = "PCLCreativePixel"
     '用于微软登录的 ClientId
     Public OAuthClientId As String = If(Environment.GetEnvironmentVariable("PCL_MS_CLIENT_ID"), "")
     'CurseForge API Key
@@ -13,9 +13,21 @@ Friend Module ModSecret
     '用于匿名数据收集的腾讯云日志服务上报 URL，形如 https://{region}.cls.tencentcs.com/track?topic_id={topic_id}
     Public Const ClsBaseUrl As String = ""
 
+#Region "定制"
+
+    ''' <summary>
+    ''' CreativePixel 版精简开关。为 True 时：
+    ''' 1. 移除「设置 → 个性化」页面；
+    ''' 2. 移除「更多」页面（含帮助、关于、百宝箱、反馈、投票）；
+    ''' 3. 标题栏固定显示「PCL CreativePixel版」文字，不受设置影响。
+    ''' </summary>
+    Public Const CreativePixelEdition As Boolean = True
+
+#End Region
+
 #Region "网络鉴权"
 
-    Public Const RestrictMcDownload As Boolean = True
+    Public Const RestrictMcDownload As Boolean = False
     Friend Function SecretCdnSign(UrlWithMark As String) As String
         If Not UrlWithMark.EndsWithF("{CDN}") Then Return UrlWithMark
         Return UrlWithMark.Replace("{CDN}", "").Replace(" ", "%20")
@@ -146,7 +158,8 @@ Friend Module ModSecret
 #Region "更新"
 
     Friend Sub UpdateCheckByButton()
-        Hint("该版本中不包含更新功能……")
+        'CreativePixel 版：已移除自动更新功能
+        Logger.Info("该版本中不包含更新功能，已忽略更新请求")
     End Sub
 
     Friend IsUpdateWaitingRestart As Boolean = False

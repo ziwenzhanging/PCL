@@ -6,10 +6,32 @@ Public Class PageLaunchRight
     Private Sub Init() Handles Me.Loaded
         PanBack.ScrollToHome()
         PanLog.Visibility = ModeDebug.ToVisibility
+        '服务器 Logo
+        RefreshServerLogo()
         '快照版提示
         PanHint.Visibility =
             (BuildType <> BuildTypes.Release AndAlso VersionBranchMain = "Official" AndAlso
              CurrentRank < DonationRank.Rank23 AndAlso Not Settings.Get(Of Boolean)("HintSnapshot")).ToVisibility
+    End Sub
+
+    ''' <summary>
+    ''' 刷新启动页右侧的服务器 Logo。
+    ''' Logo 以资源形式打包在程序内（Images\ServerLogo.png），资源不存在时自动隐藏。
+    ''' </summary>
+    Private Sub RefreshServerLogo()
+        Try
+            Dim Bitmap As New BitmapImage()
+            Bitmap.BeginInit()
+            Bitmap.UriSource = New Uri("pack://application:,,,/Plain Craft Launcher 2;component/Images/ServerLogo.png", UriKind.Absolute)
+            Bitmap.CacheOption = BitmapCacheOption.OnLoad '立即读取，加载失败会在此处抛出，便于兜底
+            Bitmap.EndInit()
+            ImgServerLogo.Source = Bitmap
+            ImgServerLogo.Visibility = Visibility.Visible
+        Catch ex As Exception
+            Logger.Warn(ex, "加载服务器 Logo 失败，已隐藏该图片")
+            ImgServerLogo.Source = Nothing
+            ImgServerLogo.Visibility = Visibility.Collapsed
+        End Try
     End Sub
 
 #Region "主页"
@@ -18,6 +40,8 @@ Public Class PageLaunchRight
     ''' 刷新主页。
     ''' </summary>
     Private Sub Refresh() Handles Me.Loaded
+        '刷新服务器 Logo，便于替换文件后点“刷新主页”立即生效
+        RefreshServerLogo()
         RunInThread(
         Sub()
             Try

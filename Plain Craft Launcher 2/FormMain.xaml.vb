@@ -447,10 +447,6 @@ Public Class FormMain
             End Try
             '上报
             Telemetry("启动")
-            '开源版本提示
-            If VersionBranchMain = "OpenSource" Then
-                MyMsgBox($"该版本中无法使用以下特性：{vbCrLf}- CurseForge API 调用：需要自行申请 API Key，然后添加到 ModSecret.vb 的开头{vbCrLf}- 正版登录：需要自行向微软申请 Client ID，然后添加到 ModSecret.vb 的开头{vbCrLf}- 更新与联网通知：避免滥用隐患{vbCrLf}- 主题切换：这是需要赞助解锁的纪念性质的功能，别让赞助者太伤心啦……{vbCrLf}- 百宝箱：开发早期往里面塞了些开发工具，整理起来太麻烦了……", "开源版本说明")
-            End If
         End Sub, "初始化", ThreadPriority.Lowest)
 
         Logger.Info($"第三阶段加载用时：{GetTimeMs() - ApplicationStartTick} ms")
@@ -742,55 +738,64 @@ Public Class FormMain
             End Select
         End If
         '标题栏显示类型
-        Select Case Settings.Get(Of Integer)("UiLogoType")
-            Case 0 '无
-                ShapeTitleLogo.Visibility = Visibility.Collapsed
-                LabTitleLogo.Visibility = Visibility.Collapsed
-                ImageTitleLogo.Visibility = Visibility.Collapsed
-                If Not IsNothing(FrmSetupUI) Then 'TODO: 和 FrmSetupUI 解耦
-                    FrmSetupUI.CheckLogoLeft.Visibility = Visibility.Visible
-                    FrmSetupUI.PanLogoText.Visibility = Visibility.Collapsed
-                    FrmSetupUI.PanLogoChange.Visibility = Visibility.Collapsed
-                End If
-            Case 1 '默认
-                ShapeTitleLogo.Visibility = Visibility.Visible
-                LabTitleLogo.Visibility = Visibility.Collapsed
-                ImageTitleLogo.Visibility = Visibility.Collapsed
-                If Not IsNothing(FrmSetupUI) Then
-                    FrmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed
-                    FrmSetupUI.PanLogoText.Visibility = Visibility.Collapsed
-                    FrmSetupUI.PanLogoChange.Visibility = Visibility.Collapsed
-                End If
-            Case 2 '文本
-                ShapeTitleLogo.Visibility = Visibility.Collapsed
-                LabTitleLogo.Visibility = Visibility.Visible
-                ImageTitleLogo.Visibility = Visibility.Collapsed
-                If Not IsNothing(FrmSetupUI) Then
-                    FrmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed
-                    FrmSetupUI.PanLogoText.Visibility = Visibility.Visible
-                    FrmSetupUI.PanLogoChange.Visibility = Visibility.Collapsed
-                End If
-            Case 3 '图片
-                ShapeTitleLogo.Visibility = Visibility.Collapsed
-                LabTitleLogo.Visibility = Visibility.Collapsed
-                ImageTitleLogo.Visibility = Visibility.Visible
-                If Not IsNothing(FrmSetupUI) Then
-                    FrmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed
-                    FrmSetupUI.PanLogoText.Visibility = Visibility.Collapsed
-                    FrmSetupUI.PanLogoChange.Visibility = Visibility.Visible
-                End If
-                Try
-                    ImageTitleLogo.Source = Paths.Base & "PCL\Logo.png"
-                Catch ex As Exception
-                    ImageTitleLogo.Source = Nothing
-                    Logger.Error(ex, "显示标题栏图片失败", LogBehavior.Alert)
-                End Try
-        End Select
-        FrmSetupUI?.CardLogo.TriggerForceResize()
-        '标题栏文本
-        LabTitleLogo.Text = Settings.Get(Of String)("UiLogoText")
-        '标题栏文本是否居左
-        PanTitleMain.ColumnDefinitions(0).Width = New GridLength(If(Settings.Get(Of Boolean)("UiLogoLeft") AndAlso Settings.Get(Of Integer)("UiLogoType") = 0, 0, 1), GridUnitType.Star)
+        If CreativePixelEdition Then
+            'CreativePixel 版：标题栏固定显示文字 Logo（不受个性化设置影响，该页面已被移除）
+            ShapeTitleLogo.Visibility = Visibility.Collapsed
+            ImageTitleLogo.Visibility = Visibility.Collapsed
+            LabTitleLogo.Visibility = Visibility.Visible
+            LabTitleLogo.Text = "PCL CreativePixel版"
+            PanTitleMain.ColumnDefinitions(0).Width = New GridLength(1, GridUnitType.Star)
+        Else
+            Select Case Settings.Get(Of Integer)("UiLogoType")
+                Case 0 '无
+                    ShapeTitleLogo.Visibility = Visibility.Collapsed
+                    LabTitleLogo.Visibility = Visibility.Collapsed
+                    ImageTitleLogo.Visibility = Visibility.Collapsed
+                    If Not IsNothing(FrmSetupUI) Then 'TODO: 和 FrmSetupUI 解耦
+                        FrmSetupUI.CheckLogoLeft.Visibility = Visibility.Visible
+                        FrmSetupUI.PanLogoText.Visibility = Visibility.Collapsed
+                        FrmSetupUI.PanLogoChange.Visibility = Visibility.Collapsed
+                    End If
+                Case 1 '默认
+                    ShapeTitleLogo.Visibility = Visibility.Visible
+                    LabTitleLogo.Visibility = Visibility.Collapsed
+                    ImageTitleLogo.Visibility = Visibility.Collapsed
+                    If Not IsNothing(FrmSetupUI) Then
+                        FrmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed
+                        FrmSetupUI.PanLogoText.Visibility = Visibility.Collapsed
+                        FrmSetupUI.PanLogoChange.Visibility = Visibility.Collapsed
+                    End If
+                Case 2 '文本
+                    ShapeTitleLogo.Visibility = Visibility.Collapsed
+                    LabTitleLogo.Visibility = Visibility.Visible
+                    ImageTitleLogo.Visibility = Visibility.Collapsed
+                    If Not IsNothing(FrmSetupUI) Then
+                        FrmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed
+                        FrmSetupUI.PanLogoText.Visibility = Visibility.Visible
+                        FrmSetupUI.PanLogoChange.Visibility = Visibility.Collapsed
+                    End If
+                Case 3 '图片
+                    ShapeTitleLogo.Visibility = Visibility.Collapsed
+                    LabTitleLogo.Visibility = Visibility.Collapsed
+                    ImageTitleLogo.Visibility = Visibility.Visible
+                    If Not IsNothing(FrmSetupUI) Then
+                        FrmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed
+                        FrmSetupUI.PanLogoText.Visibility = Visibility.Collapsed
+                        FrmSetupUI.PanLogoChange.Visibility = Visibility.Visible
+                    End If
+                    Try
+                        ImageTitleLogo.Source = Paths.Base & "PCL\Logo.png"
+                    Catch ex As Exception
+                        ImageTitleLogo.Source = Nothing
+                        Logger.Error(ex, "显示标题栏图片失败", LogBehavior.Alert)
+                    End Try
+            End Select
+            FrmSetupUI?.CardLogo.TriggerForceResize()
+            '标题栏文本
+            LabTitleLogo.Text = Settings.Get(Of String)("UiLogoText")
+            '标题栏文本是否居左
+            PanTitleMain.ColumnDefinitions(0).Width = New GridLength(If(Settings.Get(Of Boolean)("UiLogoLeft") AndAlso Settings.Get(Of Integer)("UiLogoType") = 0, 0, 1), GridUnitType.Star)
+        End If
     End Sub
 
 #End Region
@@ -1238,6 +1243,7 @@ Public Class FormMain
         SetupLink = 1
         SetupUI = 2
         SetupSystem = 3
+        SetupAbout = 4
         LinkMain = 0
         OtherHelp = 0
         OtherAbout = 1
@@ -1360,6 +1366,11 @@ Public Class FormMain
     ''' 切换页面，并引起对应选择 UI 的改变。
     ''' </summary>
     Public Sub PageChange(Stack As PageStackData, Optional SubType As PageSubType = PageSubType.Default)
+        'CreativePixel 版：被移除的页面一律重定向（「个性化」→「启动」设置子页，「更多」→「启动」页）
+        If CreativePixelEdition Then
+            If Stack.Page = PageType.Setup AndAlso SubType = PageSubType.SetupUI Then SubType = PageSubType.SetupLaunch
+            If Stack.Page = PageType.Other Then Stack = PageType.Launch
+        End If
         If PageNameGet(Stack) = "" Then
             '切换到主页面
             PageChangeExit()
@@ -1411,6 +1422,8 @@ Public Class FormMain
     ''' 切换现有页面的实际方法。
     ''' </summary>
     Private Sub PageChangeActual(Stack As PageStackData, Optional SubType As PageSubType = -1)
+        'CreativePixel 版：「更多」页面已被移除，从任何入口（含顶部导航、自定义事件）进入都回到「启动」页
+        If CreativePixelEdition AndAlso Stack.Page = PageType.Other Then Stack = PageType.Launch
         If PageCurrent = Stack AndAlso (PageCurrentSub = SubType OrElse SubType = -1) Then Return
         If Stack.Page = PageType.InstanceSetup AndAlso PageInstanceLeft.Instance IsNot Nothing AndAlso McInstanceLock.IsLocked(PageInstanceLeft.Instance) Then
             Hint("该版本正在被修改，暂时无法进入版本设置！", HintType.Red)

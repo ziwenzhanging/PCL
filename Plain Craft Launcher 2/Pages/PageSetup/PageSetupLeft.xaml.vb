@@ -6,7 +6,7 @@ Public Class PageSetupLeft
         '是否处于隐藏的子页面
         Dim IsHiddenPage As Boolean = False
         If ItemLaunch.Checked AndAlso Settings.Get(Of Boolean)("UiHiddenSetupLaunch") Then IsHiddenPage = True
-        If ItemUI.Checked AndAlso Settings.Get(Of Boolean)("UiHiddenSetupUi") Then IsHiddenPage = True
+        If ItemUI.Checked AndAlso (CreativePixelEdition OrElse Settings.Get(Of Boolean)("UiHiddenSetupUi")) Then IsHiddenPage = True
         If ItemSystem.Checked AndAlso Settings.Get(Of Boolean)("UiHiddenSetupSystem") Then IsHiddenPage = True
         If ItemLink.Checked AndAlso Settings.Get(Of Boolean)("UiHiddenSetupLink") Then IsHiddenPage = True
         If PageSetupUI.HiddenForceShow Then IsHiddenPage = False
@@ -19,7 +19,7 @@ Public Class PageSetupLeft
         If IsPageSwitched Then Return
         If Not Settings.Get(Of Boolean)("UiHiddenSetupLaunch") Then
             ItemLaunch.SetChecked(True, False, False)
-        ElseIf Not Settings.Get(Of Boolean)("UiHiddenSetupUi") Then
+        ElseIf Not CreativePixelEdition AndAlso Not Settings.Get(Of Boolean)("UiHiddenSetupUi") Then
             ItemUI.SetChecked(True, False, False)
         ElseIf Not Settings.Get(Of Boolean)("UiHiddenSetupSystem") Then
             ItemSystem.SetChecked(True, False, False)
@@ -44,7 +44,7 @@ Public Class PageSetupLeft
         '选择第一个未被禁用的子页面
         If Not Settings.Get(Of Boolean)("UiHiddenSetupLaunch") Then
             PageID = FormMain.PageSubType.SetupLaunch
-        ElseIf Not Settings.Get(Of Boolean)("UiHiddenSetupUi") Then
+        ElseIf Not CreativePixelEdition AndAlso Not Settings.Get(Of Boolean)("UiHiddenSetupUi") Then
             PageID = FormMain.PageSubType.SetupUI
         ElseIf Not Settings.Get(Of Boolean)("UiHiddenSetupSystem") Then
             PageID = FormMain.PageSubType.SetupSystem
@@ -58,7 +58,7 @@ Public Class PageSetupLeft
     ''' <summary>
     ''' 勾选事件改变页面。
     ''' </summary>
-    Private Sub PageCheck(sender As MyListItem, e As EventArgs) Handles ItemLaunch.Check, ItemSystem.Check, ItemUI.Check, ItemLink.Check
+    Private Sub PageCheck(sender As MyListItem, e As EventArgs) Handles ItemLaunch.Check, ItemSystem.Check, ItemUI.Check, ItemLink.Check, ItemAbout.Check
         '尚未初始化控件属性时，sender.Tag 为 Nothing，会跳过切换，且由于 PageID 默认为 0 而切换到第一个页面
         '若使用 IsLoaded，则会导致模拟点击不被执行（模拟点击切换页面时，控件的 IsLoaded 为 False）
         If sender.Tag IsNot Nothing Then PageChange(Val(sender.Tag))
@@ -69,6 +69,8 @@ Public Class PageSetupLeft
     ''' </summary>
     Public Function PageGet(Optional ID As FormMain.PageSubType = -1)
         If ID = -1 Then ID = PageID
+        '「个性化」页面已被移除，任何指向它的请求都改为进入「启动」设置页
+        If CreativePixelEdition AndAlso ID = FormMain.PageSubType.SetupUI Then ID = FormMain.PageSubType.SetupLaunch
         Select Case ID
             Case FormMain.PageSubType.SetupLaunch
                 If FrmSetupLaunch Is Nothing Then FrmSetupLaunch = New PageSetupLaunch
@@ -82,6 +84,10 @@ Public Class PageSetupLeft
             Case FormMain.PageSubType.SetupSystem
                 If FrmSetupSystem Is Nothing Then FrmSetupSystem = New PageSetupSystem
                 Return FrmSetupSystem
+            Case FormMain.PageSubType.SetupAbout
+                '「关于」页面随「更多」页面一起挪到了设置里
+                If FrmOtherAbout Is Nothing Then FrmOtherAbout = New PageOtherAbout
+                Return FrmOtherAbout
             Case Else
                 Throw New Exception("未知的设置子页面种类：" & ID)
         End Select
@@ -91,6 +97,8 @@ Public Class PageSetupLeft
     ''' 切换现有页面。
     ''' </summary>
     Public Sub PageChange(ID As FormMain.PageSubType)
+        '「个性化」页面已被移除，任何指向它的请求都改为进入「启动」设置页
+        If CreativePixelEdition AndAlso ID = FormMain.PageSubType.SetupUI Then ID = FormMain.PageSubType.SetupLaunch
         If PageID = ID Then Return
         AniControlEnabled += 1
         IsPageSwitched = True
@@ -109,6 +117,9 @@ Public Class PageSetupLeft
                 Case FormMain.PageSubType.SetupSystem
                     If IsNothing(FrmSetupSystem) Then FrmSetupSystem = New PageSetupSystem
                     PageChangeRun(FrmSetupSystem)
+                Case FormMain.PageSubType.SetupAbout
+                    If IsNothing(FrmOtherAbout) Then FrmOtherAbout = New PageOtherAbout
+                    PageChangeRun(FrmOtherAbout)
                 Case Else
                     Throw New Exception("未知的设置子页面种类：" & ID)
             End Select

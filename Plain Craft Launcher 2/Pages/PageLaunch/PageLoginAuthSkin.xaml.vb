@@ -22,7 +22,7 @@ Public Class PageLoginAuthSkin
     ''' </summary>
     Public Shared Function GetLoginData() As McLoginServer
         Dim Server As String = If(IsNothing(McInstanceSelected), Settings.Get(Of String)("CacheAuthServerServer"), Settings.Get(Of String)("VersionServerAuthServer", Instance:=McInstanceSelected)) & "/authserver"
-        Return New McLoginServer(McLoginType.Auth) With {.Token = "Auth", .BaseUrl = Server, .UserName = Settings.Get(Of String)("CacheAuthUsername"), .Password = Settings.Get(Of String)("CacheAuthPass"), .Description = "Authlib-Injector", .Type = McLoginType.Auth}
+        Return New McLoginServer(McLoginType.Auth) With {.Token = "Auth", .BaseUrl = Server, .UserName = Settings.Get(Of String)("CacheAuthUsername"), .Password = Settings.Get(Of String)("CacheAuthPass"), .Description = If(CreativePixelEdition, "LittleSkin 登录", "Authlib-Injector"), .Type = McLoginType.Auth}
     End Function
 
     Private Sub PageLoginAuthSkin_MouseEnter(sender As Object, e As MouseEventArgs) Handles PanData.MouseEnter
