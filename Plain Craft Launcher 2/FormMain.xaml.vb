@@ -407,6 +407,27 @@ Public Class FormMain
                 Logger.Info($"DPI：{DPI}，系统版本：{Environment.OSVersion.VersionString}，PCL 位置：{PathExe}")
             End Sub, , True)
         }, "Form Show")
+        '首次使用本版本时提示 EasyTier 已内置。
+        '刻意放在这里而不是版本升降级钩子里：那时主窗体的消息队列还没就绪，弹窗会被吞掉。
+        If Not Settings.Get(Of Boolean)("EasyTierIntroShown") Then
+            Settings.Set("EasyTierIntroShown", True)
+            RunInNewThread(
+            Sub()
+                Threading.Thread.Sleep(1400) '等待入场动画结束，避免弹窗与动画抢焦点
+                RunInUi(
+                Sub()
+                    MyMsgBox(
+                        "EasyTier 组网功能已经合并进 PCL 了。" & vbCrLf & vbCrLf &
+                        "以前需要单独下载的联机模块，现在直接内置。可以在顶部「组网」标签页中：" & vbCrLf &
+                        "· 填写网络名称与密钥" & vbCrLf &
+                        "· 启动 / 停止组网" & vbCrLf &
+                        "· 查看本机信息与全部在线节点" & vbCrLf &
+                        "· 查看运行日志" & vbCrLf & vbCrLf &
+                        "另外，启动游戏时如果组网还没开启，PCL 会询问是否一并启动。",
+                        "组网功能已内置")
+                End Sub)
+            End Sub, "EasyTier Intro")
+        End If
         'Timer 启动
         AniStart()
         TimerMainStart()
@@ -541,27 +562,9 @@ Public Class FormMain
             Settings.Reset("LaunchAdvanceJvm")
             Logger.Info("已重置 JVM 参数设置")
         End If
-        '输出更新日志
-        If LastVersionCode <= 0 Then Return
-        'EasyTier 内置版本：改用专用提示，不弹出通用的版本更新日志
-        If LastVersionCode < 415 Then
-            RunInNewThread(
-            Sub()
-                MyMsgBox(
-                    "EasyTier 组网功能已合并进 PCL。" & vbCrLf & vbCrLf &
-                    "以前需要另外下载的联机模块，现在直接内置了。可以在顶部「组网」标签页中：" & vbCrLf &
-                    "· 填写网络名称与密钥" & vbCrLf &
-                    "· 启动 / 停止组网" & vbCrLf &
-                    "· 查看本机信息与全部在线节点" & vbCrLf &
-                    "· 查看运行日志" & vbCrLf & vbCrLf &
-                    "另外，启动游戏时如果组网还没开启，PCL 会询问是否一并启动。" & vbCrLf & vbCrLf &
-                    "这个提示只会显示一次，之后可以在「组网」标签页中自行启停。",
-                    "组网功能已内置")
-            End Sub, "EasyTier Intro")
-            Return
-        End If
-        If HighestVersionCode >= VersionCode Then Return
-        ShowUpdateLog(HighestVersionCode)
+        '本定制版不合并 PCL 主线，因此不再展示通用的「PCL 已更新至 X」更新日志。
+        'EasyTier 内置提示改在窗口加载完成后单独触发（见 FormMain_Loaded），
+        '这样弹窗时主窗体的消息队列已经就绪，能够正常显示。
     End Sub
     Private Sub DowngradeSub(LastVersionCode As Integer)
         Logger.Info($"版本号从 {LastVersionCode} 降低到 {VersionCode}")
