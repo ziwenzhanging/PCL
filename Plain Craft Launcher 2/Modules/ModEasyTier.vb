@@ -908,6 +908,25 @@ Public Module ModEasyTier
             End If
             If Not Ready Then Logger.Warn("等待 EasyTier RPC 端口就绪超时，状态信息可能暂时不可用")
             State = EasyTierStates.Running
+        Else
+            ' 不阻塞调用方时（例如启动游戏顺带拉起组网），由后台继续确认就绪状态，
+            ' 否则界面会一直停在「正在启动」
+            RunInNewThread(
+            Sub()
+                Dim Ready = False
+                For i = 1 To 60 '最多等待 15 秒
+                    Threading.Thread.Sleep(250)
+                    If State <> EasyTierStates.Starting Then Exit Sub '期间被停止或已就绪
+                    If Not IsRunning Then Exit Sub '进程退出由 OnProcessExited 负责收尾
+                    If IsRpcReady() Then
+                        Ready = True
+                        Exit For
+                    End If
+                Next
+                '超时但进程仍在，同样视为运行中，避免状态卡死
+                If Not Ready Then Logger.Warn("EasyTier 后台就绪检查超时，仍将状态置为运行中")
+                If State = EasyTierStates.Starting Then State = EasyTierStates.Running
+            End Sub, "EasyTier Ready Watcher")
         End If
     End Sub
 
@@ -1003,9 +1022,11 @@ Public Module ModEasyTier
         If CurrentRpcPort <= 0 Then Return False
         Try
             Using Client As New Net.Sockets.TcpClient
-                Dim Task = Client.ConnectAsync("127.0.0.1", CurrentRpcPort)
-                If Not Task.Wait(400) Then Return False
-                Return Client.Connected
+                Dim ConnectTask = Client.ConnectAsync("127.0.0.1", CurrentRpcPort)
+                ' 连接任务完成且无异常即视为端口可用。
+                ' 不用 TcpClient.Connected 判定，该属性在异步连接后并不可靠。
+                If Not ConnectTask.Wait(400) Then Return False
+                Return Not ConnectTask.IsFaulted AndAlso Not ConnectTask.IsCanceled
             End Using
         Catch
             Return False
