@@ -12,7 +12,6 @@
             <RowDefinition />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="20" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -69,15 +68,6 @@
                     <ScaleTransform ScaleX="{Binding RealRenderTransform.ScaleX, ElementName=BtnLaunch, Mode=OneWay}" ScaleY="{Binding RealRenderTransform.ScaleY, ElementName=BtnLaunch, Mode=OneWay}" />
                 </TextBlock.RenderTransform>
             </TextBlock>
-        </Grid>
-        <!-- 组网状态：仅在 EasyTier 启动中或运行中显示，点击进入组网页 -->
-        <Grid x:Name="PanEasyTierStatus" Grid.Row="4" Grid.ColumnSpan="5" Margin="20,10,20,0"
-              Visibility="Collapsed" Cursor="Hand" ToolTip="点击打开组网页面">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Ellipse x:Name="EllipseEasyTierStatus" Width="7" Height="7" VerticalAlignment="Center" Margin="0,0,6,0" />
-                <TextBlock x:Name="LabEasyTierStatusText" FontSize="11.5" VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis" Foreground="{DynamicResource ColorBrushGray3}" />
-            </StackPanel>
         </Grid>
     </Grid>
     <Grid Name="PanLaunching" RenderTransformOrigin="0.5,0.5" Visibility="Collapsed" Opacity="0">
@@ -160,6 +150,16 @@
                     <TextBlock x:Name="LabLaunchingHint" FontSize="12.5" Text="这是一段测试用的小提示文本，它应该足够长以让它有两行。" Margin="11,21,11,10" TextWrapping="Wrap" HorizontalAlignment="Center" />
                 </Grid>
             </Grid>
+            <!-- 组网状态：沿用启动界面的半透明胶囊样式，仅在 EasyTier 运行中时出现 -->
+            <Border x:Name="PanLaunchingEasyTier" Margin="30,14,30,0" Padding="13,8"
+                    HorizontalAlignment="Center" Background="{StaticResource ColorBrushSemiTransparent}"
+                    CornerRadius="13" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse x:Name="EllipseLaunchingEasyTier" Width="7" Height="7" VerticalAlignment="Center" Margin="0,0,7,0" />
+                    <TextBlock x:Name="LabLaunchingEasyTier" FontSize="12.5" VerticalAlignment="Center"
+                               Foreground="{DynamicResource ColorBrush3}" />
+                </StackPanel>
+            </Border>
         </StackPanel>
         <local:MyButton Grid.Row="4" x:Name="BtnCancel" Height="35" Margin="20,0,20,20" VerticalAlignment="Bottom" Text="取消" />
     </Grid>

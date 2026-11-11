@@ -163,6 +163,9 @@ Public Class PageLaunchLeft
         PanLaunching.IsHitTestVisible = False
         LoadLaunching.State.LoadingState = MyLoading.MyLoadingState.Run
         PanLaunching.Visibility = Visibility.Visible
+        '切入启动界面后立即刷新一次组网状态，无需等待定时器
+        UpdateEasyTierStatusVisual()
+        RefreshEasyTierStatusAsync()
         AniStart({
                 AaOpacity(PanInput, 0, 50), '略作延迟，这样如果预检测失败，不会出现奇怪的弹一下的动画
                 AaOpacity(PanInput, -PanInput.Opacity, 110, , New AniEaseInFluent, True),
@@ -940,7 +943,6 @@ ExitRefresh:
 
         EasyTierStatusHandler = AddressOf OnEasyTierStatusChanged
         ModEasyTier.AddStateHandler(EasyTierStatusHandler)
-        AddHandler PanEasyTierStatus.MouseLeftButtonUp, AddressOf OnEasyTierStatusClicked
 
         EasyTierStatusTimer = New DispatcherTimer With {.Interval = TimeSpan.FromMilliseconds(2000)}
         AddHandler EasyTierStatusTimer.Tick, Sub() RefreshEasyTierStatusAsync()
@@ -954,29 +956,28 @@ ExitRefresh:
         RunInUi(Sub() UpdateEasyTierStatusVisual())
     End Sub
 
-    Private Sub OnEasyTierStatusClicked(sender As Object, e As MouseButtonEventArgs)
-        If PanEasyTierStatus.Visibility <> Visibility.Visible Then Return
-        FrmMain.PageChange(FormMain.PageType.EasyTier)
-    End Sub
-
     ''' <summary>
-    ''' 依据当前状态更新状态条的文字与圆点颜色。未运行时不显示。
+    ''' 依据当前状态更新启动界面里的组网状态条。未运行或不在启动页面时不显示。
     ''' </summary>
     Private Sub UpdateEasyTierStatusVisual()
+        '仅当启动中页面可见时才展示，避免影响主页布局
+        Dim IsLaunchingPage As Boolean = PanLaunching.Visibility = Visibility.Visible
         Select Case ModEasyTier.State
             Case ModEasyTier.EasyTierStates.Running
-                PanEasyTierStatus.Visibility = Visibility.Visible
-                EllipseEasyTierStatus.Fill = BrushEasyTierRunning
+                PanLaunchingEasyTier.Visibility = If(IsLaunchingPage, Visibility.Visible, Visibility.Collapsed)
+                If Not IsLaunchingPage Then Return
+                EllipseLaunchingEasyTier.Fill = BrushEasyTierRunning
                 Dim Text As String = "组网运行中"
                 If Not String.IsNullOrWhiteSpace(EasyTierStatusLastIp) Then Text &= " · " & EasyTierStatusLastIp
                 If EasyTierStatusPeerCount > 0 Then Text &= $" · {EasyTierStatusPeerCount} 个节点"
-                LabEasyTierStatusText.Text = Text
+                LabLaunchingEasyTier.Text = Text
             Case ModEasyTier.EasyTierStates.Starting
-                PanEasyTierStatus.Visibility = Visibility.Visible
-                EllipseEasyTierStatus.Fill = BrushEasyTierStarting
-                LabEasyTierStatusText.Text = "组网启动中…"
+                PanLaunchingEasyTier.Visibility = If(IsLaunchingPage, Visibility.Visible, Visibility.Collapsed)
+                If Not IsLaunchingPage Then Return
+                EllipseLaunchingEasyTier.Fill = BrushEasyTierStarting
+                LabLaunchingEasyTier.Text = "组网启动中…"
             Case Else
-                PanEasyTierStatus.Visibility = Visibility.Collapsed
+                PanLaunchingEasyTier.Visibility = Visibility.Collapsed
         End Select
     End Sub
 
