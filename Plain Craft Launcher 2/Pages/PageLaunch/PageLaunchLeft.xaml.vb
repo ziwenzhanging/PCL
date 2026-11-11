@@ -656,6 +656,8 @@ Finish:
 
         Select Case Result
             Case 1
+                '先订阅状态，再拉起，避免启动过快导致漏掉提示
+                WatchEasyTierLaunch()
                 Try
                     '只负责拉起进程，不阻塞等待连接就绪
                     ModEasyTier.StartCore(WaitReady:=False)
@@ -676,6 +678,38 @@ Finish:
                 Return True
         End Select
     End Function
+
+    ''' <summary>
+    ''' 监视一次组网启动，就绪或失败时各在左下角提示一次。
+    ''' 用于「启动游戏时顺带拉起组网」这条异步路径。
+    ''' </summary>
+    Private Sub WatchEasyTierLaunch()
+        '竞态兜底：订阅前可能已经就绪
+        If ModEasyTier.State = ModEasyTier.EasyTierStates.Running Then
+            Hint("EasyTier 组网已启动。", HintType.Green)
+            Return
+        End If
+        Dim Handler As Action(Of ModEasyTier.EasyTierStates) = Nothing
+        Handler =
+            Sub(NewState)
+                Try
+                    Select Case NewState
+                        Case ModEasyTier.EasyTierStates.Running
+                            ModEasyTier.RemoveStateHandler(Handler)
+                            RunInUi(Sub() Hint("EasyTier 组网已启动。", HintType.Green))
+                        Case ModEasyTier.EasyTierStates.Failed
+                            ModEasyTier.RemoveStateHandler(Handler)
+                            RunInUi(Sub() Hint("EasyTier 组网启动失败，请到「组网」页查看运行日志。", HintType.Red))
+                        Case ModEasyTier.EasyTierStates.Stopped, ModEasyTier.EasyTierStates.Stopping
+                            '用户或异常导致的停止，交给进程退出逻辑收尾，不再额外提示
+                            ModEasyTier.RemoveStateHandler(Handler)
+                    End Select
+                Catch ex As Exception
+                    Logger.Warn(ex, "处理组网启动状态回调失败")
+                End Try
+            End Sub
+        ModEasyTier.AddStateHandler(Handler)
+    End Sub
     Private BtnLaunchState As Integer = 0
     Private BtnLaunchInstance As McInstance = Nothing
     Public Sub RefreshButtonsUI() Handles BtnLaunch.Loaded
