@@ -12,6 +12,7 @@
             <RowDefinition />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="20" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -68,6 +69,15 @@
                     <ScaleTransform ScaleX="{Binding RealRenderTransform.ScaleX, ElementName=BtnLaunch, Mode=OneWay}" ScaleY="{Binding RealRenderTransform.ScaleY, ElementName=BtnLaunch, Mode=OneWay}" />
                 </TextBlock.RenderTransform>
             </TextBlock>
+        </Grid>
+        <!-- 组网状态：仅在 EasyTier 启动中或运行中显示，点击进入组网页 -->
+        <Grid x:Name="PanEasyTierStatus" Grid.Row="4" Grid.ColumnSpan="5" Margin="20,10,20,0"
+              Visibility="Collapsed" Cursor="Hand" ToolTip="点击打开组网页面">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Ellipse x:Name="EllipseEasyTierStatus" Width="7" Height="7" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <TextBlock x:Name="LabEasyTierStatusText" FontSize="11.5" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" Foreground="{DynamicResource ColorBrushGray3}" />
+            </StackPanel>
         </Grid>
     </Grid>
     <Grid Name="PanLaunching" RenderTransformOrigin="0.5,0.5" Visibility="Collapsed" Opacity="0">

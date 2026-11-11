@@ -1,4 +1,5 @@
 Imports System.Windows.Threading
+Imports System.Windows.Media
 
 Public Class PageLaunchLeft
 
@@ -111,6 +112,8 @@ Public Class PageLaunchLeft
         Dim LoginType = Settings.Get(Of McLoginType)("LoginType")
         If LoginType = McLoginType.Legacy OrElse LoginType = McLoginType.Ms Then CType(FindName("RadioLoginType" & LoginType), MyRadioButton).Checked = True
         RefreshPage(False, False)
+
+        InitEasyTierStatus()
 
         AniControlEnabled -= 1
     End Sub
@@ -914,5 +917,113 @@ ExitRefresh:
         ActualUsedHeight = PanLaunchingInfo.Height
         PanLaunchingInfo.Height = e.PreviousSize.Height
     End Sub
+
+#Region "组网状态"
+
+    Private Shared ReadOnly BrushEasyTierRunning As Brush = New SolidColorBrush(Color.FromRgb(46, 204, 113))
+    Private Shared ReadOnly BrushEasyTierStarting As Brush = New SolidColorBrush(Color.FromRgb(245, 166, 35))
+
+    Private IsEasyTierStatusInited As Boolean = False
+    Private EasyTierStatusTimer As DispatcherTimer
+    Private EasyTierStatusHandler As Action(Of ModEasyTier.EasyTierStates)
+    Private EasyTierStatusRefreshing As Boolean = False
+    Private EasyTierStatusPeerTick As Integer = 0
+    Private EasyTierStatusLastIp As String = Nothing
+    Private EasyTierStatusPeerCount As Integer = -1
+
+    ''' <summary>
+    ''' 初始化主页底部的组网状态条，只执行一次。
+    ''' </summary>
+    Private Sub InitEasyTierStatus()
+        If IsEasyTierStatusInited Then Return
+        IsEasyTierStatusInited = True
+
+        EasyTierStatusHandler = AddressOf OnEasyTierStatusChanged
+        ModEasyTier.AddStateHandler(EasyTierStatusHandler)
+        AddHandler PanEasyTierStatus.MouseLeftButtonUp, AddressOf OnEasyTierStatusClicked
+
+        EasyTierStatusTimer = New DispatcherTimer With {.Interval = TimeSpan.FromMilliseconds(2000)}
+        AddHandler EasyTierStatusTimer.Tick, Sub() RefreshEasyTierStatusAsync()
+        EasyTierStatusTimer.Start()
+
+        UpdateEasyTierStatusVisual()
+        RefreshEasyTierStatusAsync()
+    End Sub
+
+    Private Sub OnEasyTierStatusChanged(NewState As ModEasyTier.EasyTierStates)
+        RunInUi(Sub() UpdateEasyTierStatusVisual())
+    End Sub
+
+    Private Sub OnEasyTierStatusClicked(sender As Object, e As MouseButtonEventArgs)
+        If PanEasyTierStatus.Visibility <> Visibility.Visible Then Return
+        FrmMain.PageChange(FormMain.PageType.EasyTier)
+    End Sub
+
+    ''' <summary>
+    ''' 依据当前状态更新状态条的文字与圆点颜色。未运行时不显示。
+    ''' </summary>
+    Private Sub UpdateEasyTierStatusVisual()
+        Select Case ModEasyTier.State
+            Case ModEasyTier.EasyTierStates.Running
+                PanEasyTierStatus.Visibility = Visibility.Visible
+                EllipseEasyTierStatus.Fill = BrushEasyTierRunning
+                Dim Text As String = "组网运行中"
+                If Not String.IsNullOrWhiteSpace(EasyTierStatusLastIp) Then Text &= " · " & EasyTierStatusLastIp
+                If EasyTierStatusPeerCount > 0 Then Text &= $" · {EasyTierStatusPeerCount} 个节点"
+                LabEasyTierStatusText.Text = Text
+            Case ModEasyTier.EasyTierStates.Starting
+                PanEasyTierStatus.Visibility = Visibility.Visible
+                EllipseEasyTierStatus.Fill = BrushEasyTierStarting
+                LabEasyTierStatusText.Text = "组网启动中…"
+            Case Else
+                PanEasyTierStatus.Visibility = Visibility.Collapsed
+        End Select
+    End Sub
+
+    ''' <summary>
+    ''' 后台读取虚拟 IP 与节点数，回到 UI 线程刷新状态条。
+    ''' </summary>
+    Private Sub RefreshEasyTierStatusAsync()
+        If EasyTierStatusRefreshing Then Return
+        Dim CurrentState = ModEasyTier.State
+        If CurrentState <> ModEasyTier.EasyTierStates.Running AndAlso CurrentState <> ModEasyTier.EasyTierStates.Starting Then
+            UpdateEasyTierStatusVisual()
+            Return
+        End If
+        EasyTierStatusRefreshing = True
+        RunInNewThread(
+        Sub()
+            Dim Ip As String = Nothing
+            Dim PeerCount As Integer = -1
+            Try
+                If ModEasyTier.IsRunning Then
+                    Dim NodeInfo = ModEasyTier.GetNodeInfo()
+                    If NodeInfo IsNot Nothing Then
+                        Ip = NodeInfo.SelectToken("ipv4_addr")?.ToString()
+                        If Not String.IsNullOrWhiteSpace(Ip) Then Ip = Ip.Split("/"c)(0).Trim()
+                    End If
+                    '节点列表开销较大，降低到约 1/2 的频率
+                    EasyTierStatusPeerTick += 1
+                    If EasyTierStatusPeerTick >= 2 Then
+                        EasyTierStatusPeerTick = 0
+                        Dim Peers = ModEasyTier.GetPeers()
+                        If Peers IsNot Nothing Then PeerCount = Peers.Count
+                    End If
+                End If
+            Catch ex As Exception
+                Logger.Warn(ex, "刷新主页组网状态失败")
+            Finally
+                EasyTierStatusRefreshing = False
+            End Try
+            RunInUi(
+            Sub()
+                If Ip IsNot Nothing Then EasyTierStatusLastIp = Ip
+                If PeerCount >= 0 Then EasyTierStatusPeerCount = PeerCount
+                UpdateEasyTierStatusVisual()
+            End Sub)
+        End Sub, "EasyTier Launch Status")
+    End Sub
+
+#End Region
 
 End Class
