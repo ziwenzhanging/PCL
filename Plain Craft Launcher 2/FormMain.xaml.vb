@@ -11,6 +11,10 @@ Public Class FormMain
         Dim FeatureList As New List(Of KeyValuePair(Of Integer, String))
         '统计更新日志条目
         If BuildType = BuildTypes.Release Then
+            If LastVersion < 414 Then 'PCL 定制版：EasyTier 内置
+                FeatureList.Add(New KeyValuePair(Of Integer, String)(6, "新增：EasyTier 组网功能已内置，无需额外下载。可在顶部「组网」标签页中填写网络配置、启停组网并查看节点状态"))
+                FeatureList.Add(New KeyValuePair(Of Integer, String)(4, "新增：启动游戏时若组网尚未开启，会询问是否一并启动（可在弹窗中选择不再提醒）"))
+            End If
             If LastVersion < 413 Then 'Release 2.99.0.0
                 FeatureList.Add(New KeyValuePair(Of Integer, String)(5, "删除：为遵守相关法律法规，PCL 暂时不再提供 MC 下载功能，非常抱歉 qwq……"))
             End If

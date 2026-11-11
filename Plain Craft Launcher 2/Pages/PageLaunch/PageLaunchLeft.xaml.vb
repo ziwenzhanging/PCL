@@ -627,11 +627,55 @@ Finish:
         End If
         '实际的启动
         If BtnLaunch.Text = "启动游戏" Then
+            '组网检查：未开启时询问是否一并启动
+            If Not ConfirmEasyTierBeforeLaunch() Then Return
             McLaunchStart()
         ElseIf BtnLaunch.Text = "下载游戏" Then
             FrmMain.PageChange(FormMain.PageType.Download, FormMain.PageSubType.DownloadInstall)
         End If
     End Sub
+
+    ''' <summary>
+    ''' 启动游戏前检查组网状态。
+    ''' 若 EasyTier 尚未运行，询问用户是否现在启动；返回 False 表示中止本次启动。
+    ''' </summary>
+    Private Function ConfirmEasyTierBeforeLaunch() As Boolean
+        '用户已选择不再提醒
+        If Not Settings.Get(Of Boolean)("LaunchEasyTierPrompt") Then Return True
+        '已经在运行，无需打扰
+        If ModEasyTier.State = ModEasyTier.EasyTierStates.Running Then Return True
+        '没有配置文件或组件不完整时，启动也只会失败，这里不打扰用户
+        If Not ModEasyTier.HasTomlConfig Then Return True
+        If Not ModEasyTier.IsBinariesReady Then Return True
+
+        Dim Result As Integer = MyMsgBox(
+            "EasyTier 组网还没有启动。" & vbCrLf &
+            "如果这次要和同学联机，建议先启动组网再进入游戏。" & vbCrLf & vbCrLf &
+            "要现在启动组网吗？",
+            "启动组网", "启动组网", "直接启动游戏", "以后不再提醒")
+
+        Select Case Result
+            Case 1
+                Try
+                    '只负责拉起进程，不阻塞等待连接就绪
+                    ModEasyTier.StartCore(WaitReady:=False)
+                    Hint("正在后台启动 EasyTier 组网…", HintType.Green)
+                Catch ex As Exception
+                    Logger.Warn(ex, "启动游戏前启动 EasyTier 失败")
+                    Hint("启动组网失败：" & ex.Message, HintType.Red)
+                End Try
+                Return True
+            Case 2
+                Return True
+            Case 3
+                Settings.Set("LaunchEasyTierPrompt", False)
+                Hint("已关闭启动提示，之后可在「组网」标签页手动启动。", HintType.Blue)
+                Return True
+            Case Else
+                '关闭弹窗等同直接启动
+                Return True
+        End Select
+    End Function
     Private BtnLaunchState As Integer = 0
     Private BtnLaunchInstance As McInstance = Nothing
     Public Sub RefreshButtonsUI() Handles BtnLaunch.Loaded
