@@ -11,10 +11,6 @@ Public Class FormMain
         Dim FeatureList As New List(Of KeyValuePair(Of Integer, String))
         '统计更新日志条目
         If BuildType = BuildTypes.Release Then
-            If LastVersion < 414 Then 'PCL 定制版：EasyTier 内置
-                FeatureList.Add(New KeyValuePair(Of Integer, String)(6, "新增：EasyTier 组网功能已内置，无需额外下载。可在顶部「组网」标签页中填写网络配置、启停组网并查看节点状态"))
-                FeatureList.Add(New KeyValuePair(Of Integer, String)(4, "新增：启动游戏时若组网尚未开启，会询问是否一并启动（可在弹窗中选择不再提醒）"))
-            End If
             If LastVersion < 413 Then 'Release 2.99.0.0
                 FeatureList.Add(New KeyValuePair(Of Integer, String)(5, "删除：为遵守相关法律法规，PCL 暂时不再提供 MC 下载功能，非常抱歉 qwq……"))
             End If
@@ -547,6 +543,23 @@ Public Class FormMain
         End If
         '输出更新日志
         If LastVersionCode <= 0 Then Return
+        'EasyTier 内置版本：改用专用提示，不弹出通用的版本更新日志
+        If LastVersionCode < 415 Then
+            RunInNewThread(
+            Sub()
+                MyMsgBox(
+                    "EasyTier 组网功能已合并进 PCL。" & vbCrLf & vbCrLf &
+                    "以前需要另外下载的联机模块，现在直接内置了。可以在顶部「组网」标签页中：" & vbCrLf &
+                    "· 填写网络名称与密钥" & vbCrLf &
+                    "· 启动 / 停止组网" & vbCrLf &
+                    "· 查看本机信息与全部在线节点" & vbCrLf &
+                    "· 查看运行日志" & vbCrLf & vbCrLf &
+                    "另外，启动游戏时如果组网还没开启，PCL 会询问是否一并启动。" & vbCrLf & vbCrLf &
+                    "这个提示只会显示一次，之后可以在「组网」标签页中自行启停。",
+                    "组网功能已内置")
+            End Sub, "EasyTier Intro")
+            Return
+        End If
         If HighestVersionCode >= VersionCode Then Return
         ShowUpdateLog(HighestVersionCode)
     End Sub
