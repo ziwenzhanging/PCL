@@ -957,6 +957,8 @@ Public Module ModEasyTier
             KillStaleProcesses()
             CurrentListenerPort = 0
             CurrentRpcPort = 0
+            '停止后不再保留上一次 RPC 失败信息，避免界面在「未启动」时显示连接错误
+            LastRpcError = Nothing
             State = EasyTierStates.Stopped
             WriteLog("[PCL] EasyTier 已停止。")
             CloseLogFile()
@@ -1073,13 +1075,18 @@ Public Module ModEasyTier
                     LastRpcError = "管理 RPC 返回了空内容。"
                     Return Nothing
                 End If
+                '读取成功时清除历史错误，避免旧提示残留
+                LastRpcError = Nothing
                 Return JObject.Parse(Json)
             End Using
         Catch ex As Exception
-            LastRpcError = ex.Message
-            ' 同时写进 EasyTier 专用日志，方便用户直接在「运行日志」里看到
-            WriteLog($"[PCL] 读取节点信息失败：{ex.GetType().Name}: {ex.Message}")
-            Logger.Warn(ex, "通过管理 RPC 读取 EasyTier 节点信息失败")
+            '停止或退出过程中的连接中断属于正常现象，不记录为错误，避免界面出现误导性提示
+            If State = EasyTierStates.Running OrElse State = EasyTierStates.Starting Then
+                LastRpcError = ex.Message
+                ' 同时写进 EasyTier 专用日志，方便用户直接在「运行日志」里看到
+                WriteLog($"[PCL] 读取节点信息失败：{ex.GetType().Name}: {ex.Message}")
+                Logger.Warn(ex, "通过管理 RPC 读取 EasyTier 节点信息失败")
+            End If
             Return Nothing
         End Try
     End Function

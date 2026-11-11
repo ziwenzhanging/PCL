@@ -180,9 +180,10 @@ Public Class PageEasyTierOverview
         If NodeInfo Is Nothing Then
             LabIp.Text = "—"
             LabNatType.Text = "—"
-            ' 把 RPC 失败原因直接显示出来，避免界面只有「—」却不知道哪里出错
-            If Not String.IsNullOrWhiteSpace(ModEasyTier.LastRpcError) Then
-                LabStatusDetail.Text = "读取组网信息失败：" & ModEasyTier.LastRpcError
+            '只有在运行中读不到数据时才是异常；停止或启动中读不到是正常现象
+            If ModEasyTier.State = ModEasyTier.EasyTierStates.Running AndAlso
+               Not String.IsNullOrWhiteSpace(ModEasyTier.LastRpcError) Then
+                LabStatusDetail.Text = "读取组网信息失败：" & ModEasyTier.LastRpcError.TrimEnd("。"c, "."c)
             End If
             Return
         End If
