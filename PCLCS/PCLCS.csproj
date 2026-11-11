@@ -19,6 +19,16 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<!-- EasyTier 管理 RPC 的 protobuf 编解码；该协议不是 gRPC，因此不需要 Grpc.Core -->
+		<PackageReference Include="Google.Protobuf" Version="3.21.9" />
+		<PackageReference Include="Grpc.Tools" Version="2.46.6">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Protobuf Include="EasyTierProto\*.proto" ProtoRoot="EasyTierProto" GrpcServices="None" />
 	</ItemGroup>
 
 	<ItemGroup>

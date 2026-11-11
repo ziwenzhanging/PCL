@@ -342,3 +342,10 @@ ASALocalRun/
 healthchecksdb
 
 MaskFiles/
+
+# EasyTier 集成：调试用临时工程与本地构建产物
+.dsh/
+run/
+
+# EasyTier 用户运行配置（含网络密钥），不入库
+Plain Craft Launcher 2/EasyTier/easytier.toml

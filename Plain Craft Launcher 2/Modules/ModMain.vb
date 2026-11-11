@@ -398,6 +398,11 @@ EndHint:
     Public FrmOtherAbout As PageOtherAbout
     Public FrmOtherTest As PageOtherTest
 
+    '组网页面声明
+    Public FrmEasyTierLeft As PageEasyTierLeft
+    Public FrmEasyTierOverview As PageEasyTierOverview
+    Public FrmEasyTierLog As PageEasyTierLog
+
     '登录页面声明
     Public FrmLoginLegacy As PageLoginLegacy
     Public FrmLoginNide As PageLoginNide

@@ -371,6 +371,15 @@
     <Compile Include="Pages\PageSetup\PageSetupLeft.xaml.vb">
       <DependentUpon>PageSetupLeft.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Pages\PageEasyTier\PageEasyTierLeft.xaml.vb">
+      <DependentUpon>PageEasyTierLeft.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\PageEasyTier\PageEasyTierOverview.xaml.vb">
+      <DependentUpon>PageEasyTierOverview.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\PageEasyTier\PageEasyTierLog.xaml.vb">
+      <DependentUpon>PageEasyTierLog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Pages\PageSetup\Settings.vb" />
     <Compile Include="Pages\PageSetup\PageSetupLaunch.xaml.vb">
       <DependentUpon>PageSetupLaunch.xaml</DependentUpon>
@@ -619,6 +628,18 @@
     <Page Include="Pages\PageOther\PageOtherLeft.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Pages\PageEasyTier\PageEasyTierLeft.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Pages\PageEasyTier\PageEasyTierOverview.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Pages\PageEasyTier\PageEasyTierLog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Pages\PageSetup\PageSetupLeft.xaml">
       <SubType>Designer</SubType>
@@ -950,6 +971,37 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\ServerLogo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Modules\ModEasyTier.vb" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="EasyTier\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <!-- EasyTierProtobufDeps: Google.Protobuf 及其传递依赖。版本必须与 App.config 的 bindingRedirect 一致，否则报 0x80131040。 -->
+  <ItemGroup>
+    <None Include="..\PCLCS\bin\Google.Protobuf.dll">
+      <Link>Google.Protobuf.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\PCLCS\bin\System.Memory.dll">
+      <Link>System.Memory.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\RuntimeDeps\System.Runtime.CompilerServices.Unsafe.dll">
+      <Link>System.Runtime.CompilerServices.Unsafe.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\RuntimeDeps\System.Buffers.dll">
+      <Link>System.Buffers.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\RuntimeDeps\System.Numerics.Vectors.dll">
+      <Link>System.Numerics.Vectors.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>
