@@ -172,4 +172,19 @@
   <data name="Transformer" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\transformer.jar;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="Google.Protobuf" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\..\PCLCS\bin\Google.Protobuf.dll;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="System.Buffers" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\..\RuntimeDeps\System.Buffers.dll;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="System.Memory" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\..\PCLCS\bin\System.Memory.dll;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="System.Numerics.Vectors" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\..\RuntimeDeps\System.Numerics.Vectors.dll;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="System.Runtime.CompilerServices.Unsafe" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\..\RuntimeDeps\System.Runtime.CompilerServices.Unsafe.dll;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>
