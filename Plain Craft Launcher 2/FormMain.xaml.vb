@@ -635,6 +635,9 @@ Public Class FormMain
         On Error Resume Next
         IsProgramEnding = True
         AniControlEnabled += 1
+        '结束由 PCL 拉起的 EasyTier 核心，避免关闭启动器后留下后台进程
+        'StopCore 内部已做异常保护，且本方法启用了 On Error Resume Next，故不再包 Try
+        ModEasyTier.StopCore()
         If IsUpdateWaitingRestart Then UpdateRestart(False)
         If ReturnCode = ProcessReturnValues.Exception Then
             If Not IsLogShown Then
