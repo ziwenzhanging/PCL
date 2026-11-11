@@ -1,0 +1,102 @@
+<local:MyPageRight
+     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+     xmlns:local="clr-namespace:PCL" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+     mc:Ignorable="d" x:Class="PageEasyTierOverview"
+     PanScroll="PanBack">
+    <local:MyScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" x:Name="PanBack">
+        <StackPanel x:Name="PanMain" Margin="25,10">
+            <local:MyCard x:Name="CardStatus" Margin="0,10,0,15" Title="组网状态">
+                <Grid Margin="25,42,25,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Ellipse x:Name="ShapeStatus" Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,12,0" Fill="{DynamicResource ColorBrushGray4}" />
+                    <TextBlock x:Name="LabStatus" Grid.Column="1" FontSize="18" VerticalAlignment="Center" Text="未启动" />
+                    <local:MyButton x:Name="BtnToggle" Grid.Column="2" Grid.RowSpan="2" Text="启动组网" ColorType="Highlight" MinWidth="124" Height="34" Padding="16,0" />
+                    <TextBlock x:Name="LabStatusDetail" Grid.Row="2" Grid.ColumnSpan="3" Margin="0,12,0,0" TextWrapping="Wrap"
+                               Foreground="{DynamicResource ColorBrushGray3}" FontSize="13" LineHeight="20"
+                               Text="点击右侧按钮启动 EasyTier，让同一网络内的设备互相访问。" />
+                </Grid>
+            </local:MyCard>
+            <local:MyCard x:Name="CardInfo" Margin="0,0,0,15" Title="本机信息">
+                <Grid Margin="25,42,25,22">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,15,0">
+                        <TextBlock Text="虚拟 IP" Foreground="{DynamicResource ColorBrushGray3}" FontSize="12" />
+                        <TextBlock x:Name="LabIp" Text="—" FontSize="16" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="0,0,15,0">
+                        <TextBlock Text="在线节点" Foreground="{DynamicResource ColorBrushGray3}" FontSize="12" />
+                        <TextBlock x:Name="LabPeerCount" Text="—" FontSize="16" Margin="0,3,0,0" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="0,0,15,0">
+                        <TextBlock Text="NAT 类型" Foreground="{DynamicResource ColorBrushGray3}" FontSize="12" />
+                        <TextBlock x:Name="LabNatType" Text="—" FontSize="16" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3">
+                        <TextBlock Text="网络名称" Foreground="{DynamicResource ColorBrushGray3}" FontSize="12" />
+                        <TextBlock x:Name="LabNetworkName" Text="—" FontSize="16" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Grid>
+            </local:MyCard>
+            <local:MyCard x:Name="CardPeers" Margin="0,0,0,15" Title="节点列表">
+                <StackPanel Margin="25,42,25,20">
+                    <Grid x:Name="PanPeerHeader" Height="28">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.5*" />
+                            <ColumnDefinition Width="1.1*" />
+                            <ColumnDefinition Width="0.7*" />
+                            <ColumnDefinition Width="0.9*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="名称" Foreground="{DynamicResource ColorBrushGray3}" FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="虚拟 IP" Foreground="{DynamicResource ColorBrushGray3}" FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="延迟" Foreground="{DynamicResource ColorBrushGray3}" FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="3" Text="连接" Foreground="{DynamicResource ColorBrushGray3}" FontSize="12" VerticalAlignment="Center" />
+                    </Grid>
+                    <Border Height="1" Background="{DynamicResource ColorBrush7}" Margin="0,0,0,4" />
+                    <StackPanel x:Name="PanPeers" />
+                    <TextBlock x:Name="LabPeersEmpty" Text="暂未连接到任何节点。" Foreground="{DynamicResource ColorBrushGray3}"
+                               FontSize="13" Margin="0,10,0,6" Visibility="Collapsed" />
+                </StackPanel>
+            </local:MyCard>
+            <local:MyCard x:Name="CardRuntime" Margin="0,0,0,10" Title="运行信息">
+                <Grid Margin="25,42,25,22">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,15,0">
+                        <TextBlock Text="监听端口" Foreground="{DynamicResource ColorBrushGray3}" FontSize="12" />
+                        <TextBlock x:Name="LabListenPort" Text="—" FontSize="15" Margin="0,3,0,0" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="0,0,15,0">
+                        <TextBlock Text="管理端口" Foreground="{DynamicResource ColorBrushGray3}" FontSize="12" />
+                        <TextBlock x:Name="LabRpcPort" Text="—" FontSize="15" Margin="0,3,0,0" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="核心版本" Foreground="{DynamicResource ColorBrushGray3}" FontSize="12" />
+                        <TextBlock x:Name="LabVersion" Text="—" FontSize="15" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Grid>
+            </local:MyCard>
+        </StackPanel>
+    </local:MyScrollViewer>
+</local:MyPageRight>

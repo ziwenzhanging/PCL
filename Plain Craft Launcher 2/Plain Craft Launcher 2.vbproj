@@ -371,6 +371,15 @@
     <Compile Include="Pages\PageSetup\PageSetupLeft.xaml.vb">
       <DependentUpon>PageSetupLeft.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Pages\PageEasyTier\PageEasyTierLeft.xaml.vb">
+      <DependentUpon>PageEasyTierLeft.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\PageEasyTier\PageEasyTierOverview.xaml.vb">
+      <DependentUpon>PageEasyTierOverview.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\PageEasyTier\PageEasyTierLog.xaml.vb">
+      <DependentUpon>PageEasyTierLog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Pages\PageSetup\Settings.vb" />
     <Compile Include="Pages\PageSetup\PageSetupLaunch.xaml.vb">
       <DependentUpon>PageSetupLaunch.xaml</DependentUpon>
@@ -619,6 +628,18 @@
     <Page Include="Pages\PageOther\PageOtherLeft.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Pages\PageEasyTier\PageEasyTierLeft.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Pages\PageEasyTier\PageEasyTierOverview.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Pages\PageEasyTier\PageEasyTierLog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Pages\PageSetup\PageSetupLeft.xaml">
       <SubType>Designer</SubType>
@@ -912,15 +933,20 @@
     <ProjectReference Include="..\MeloongCore\Shared\MeloongCore.csproj">
       <Project>{d22bbf3c-2177-0208-4e29-8466aa41ac6f}</Project>
       <Name>MeloongCore</Name>
+      <!-- 已通过 Resources.resx 内嵌进 exe，不复制到输出目录 -->
+      <Private>False</Private>
     </ProjectReference>
     <ProjectReference Include="..\MeloongCore\Wpf\MeloongCore.Wpf.csproj">
       <Project>{2dffe2a0-1101-816b-d240-f644b2d74a68}</Project>
       <Name>MeloongCore.Wpf</Name>
+      <!-- 已通过 Resources.resx 内嵌进 exe，不复制到输出目录 -->
+      <Private>False</Private>
     </ProjectReference>
     <ProjectReference Include="..\PCLCS\PCLCS.csproj">
       <Project>{32de4aaf-f4d6-42c5-9604-19236de96c69}</Project>
       <Name>PCLCS</Name>
-      <Private>True</Private>
+      <!-- PCLCS 及其依赖已内嵌进 exe，不复制到输出目录，避免外部程序集版本不一致 -->
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -950,6 +976,14 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\ServerLogo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Modules\ModEasyTier.vb" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="EasyTier\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

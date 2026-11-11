@@ -1,4 +1,5 @@
 Imports System.Windows.Threading
+Imports System.Windows.Media
 
 Public Class PageLaunchLeft
 
@@ -112,6 +113,8 @@ Public Class PageLaunchLeft
         If LoginType = McLoginType.Legacy OrElse LoginType = McLoginType.Ms Then CType(FindName("RadioLoginType" & LoginType), MyRadioButton).Checked = True
         RefreshPage(False, False)
 
+        InitEasyTierStatus()
+
         AniControlEnabled -= 1
     End Sub
 
@@ -160,6 +163,9 @@ Public Class PageLaunchLeft
         PanLaunching.IsHitTestVisible = False
         LoadLaunching.State.LoadingState = MyLoading.MyLoadingState.Run
         PanLaunching.Visibility = Visibility.Visible
+        '切入启动界面后立即刷新一次组网状态，无需等待定时器
+        UpdateEasyTierStatusVisual()
+        RefreshEasyTierStatusAsync()
         AniStart({
                 AaOpacity(PanInput, 0, 50), '略作延迟，这样如果预检测失败，不会出现奇怪的弹一下的动画
                 AaOpacity(PanInput, -PanInput.Opacity, 110, , New AniEaseInFluent, True),
@@ -627,10 +633,88 @@ Finish:
         End If
         '实际的启动
         If BtnLaunch.Text = "启动游戏" Then
+            '组网检查：未开启时询问是否一并启动
+            If Not ConfirmEasyTierBeforeLaunch() Then Return
             McLaunchStart()
         ElseIf BtnLaunch.Text = "下载游戏" Then
             FrmMain.PageChange(FormMain.PageType.Download, FormMain.PageSubType.DownloadInstall)
         End If
+    End Sub
+
+    ''' <summary>
+    ''' 启动游戏前检查组网状态。
+    ''' 若 EasyTier 尚未运行，询问用户是否现在启动；返回 False 表示中止本次启动。
+    ''' </summary>
+    Private Function ConfirmEasyTierBeforeLaunch() As Boolean
+        '用户已选择不再提醒
+        If Not Settings.Get(Of Boolean)("LaunchEasyTierPrompt") Then Return True
+        '已经在运行，无需打扰
+        If ModEasyTier.State = ModEasyTier.EasyTierStates.Running Then Return True
+        '没有配置文件或组件不完整时，启动也只会失败，这里不打扰用户
+        If Not ModEasyTier.HasTomlConfig Then Return True
+        If Not ModEasyTier.IsBinariesReady Then Return True
+
+        Dim Result As Integer = MyMsgBox(
+            "EasyTier 组网还没有启动。" & vbCrLf &
+            "如果这次要和同学联机，建议先启动组网再进入游戏。" & vbCrLf & vbCrLf &
+            "要现在启动组网吗？",
+            "启动组网", "启动组网", "直接启动游戏", "以后不再提醒")
+
+        Select Case Result
+            Case 1
+                '先订阅状态，再拉起，避免启动过快导致漏掉提示
+                WatchEasyTierLaunch()
+                Try
+                    '只负责拉起进程，不阻塞等待连接就绪
+                    ModEasyTier.StartCore(WaitReady:=False)
+                    Hint("正在后台启动 EasyTier 组网…", HintType.Green)
+                Catch ex As Exception
+                    Logger.Warn(ex, "启动游戏前启动 EasyTier 失败")
+                    Hint("启动组网失败：" & ex.Message, HintType.Red)
+                End Try
+                Return True
+            Case 2
+                Return True
+            Case 3
+                Settings.Set("LaunchEasyTierPrompt", False)
+                Hint("已关闭启动提示，之后可在「组网」标签页手动启动。", HintType.Blue)
+                Return True
+            Case Else
+                '关闭弹窗等同直接启动
+                Return True
+        End Select
+    End Function
+
+    ''' <summary>
+    ''' 监视一次组网启动，就绪或失败时各在左下角提示一次。
+    ''' 用于「启动游戏时顺带拉起组网」这条异步路径。
+    ''' </summary>
+    Private Sub WatchEasyTierLaunch()
+        '竞态兜底：订阅前可能已经就绪
+        If ModEasyTier.State = ModEasyTier.EasyTierStates.Running Then
+            Hint("EasyTier 组网已启动。", HintType.Green)
+            Return
+        End If
+        Dim Handler As Action(Of ModEasyTier.EasyTierStates) = Nothing
+        Handler =
+            Sub(NewState)
+                Try
+                    Select Case NewState
+                        Case ModEasyTier.EasyTierStates.Running
+                            ModEasyTier.RemoveStateHandler(Handler)
+                            RunInUi(Sub() Hint("EasyTier 组网已启动。", HintType.Green))
+                        Case ModEasyTier.EasyTierStates.Failed
+                            ModEasyTier.RemoveStateHandler(Handler)
+                            RunInUi(Sub() Hint("EasyTier 组网启动失败，请到「组网」页查看运行日志。", HintType.Red))
+                        Case ModEasyTier.EasyTierStates.Stopped, ModEasyTier.EasyTierStates.Stopping
+                            '用户或异常导致的停止，交给进程退出逻辑收尾，不再额外提示
+                            ModEasyTier.RemoveStateHandler(Handler)
+                    End Select
+                Catch ex As Exception
+                    Logger.Warn(ex, "处理组网启动状态回调失败")
+                End Try
+            End Sub
+        ModEasyTier.AddStateHandler(Handler)
     End Sub
     Private BtnLaunchState As Integer = 0
     Private BtnLaunchInstance As McInstance = Nothing
@@ -836,5 +920,111 @@ ExitRefresh:
         ActualUsedHeight = PanLaunchingInfo.Height
         PanLaunchingInfo.Height = e.PreviousSize.Height
     End Sub
+
+#Region "组网状态"
+
+    Private Shared ReadOnly BrushEasyTierRunning As Brush = New SolidColorBrush(Color.FromRgb(46, 204, 113))
+    Private Shared ReadOnly BrushEasyTierStarting As Brush = New SolidColorBrush(Color.FromRgb(245, 166, 35))
+
+    Private IsEasyTierStatusInited As Boolean = False
+    Private EasyTierStatusTimer As DispatcherTimer
+    Private EasyTierStatusHandler As Action(Of ModEasyTier.EasyTierStates)
+    Private EasyTierStatusRefreshing As Boolean = False
+    Private EasyTierStatusPeerTick As Integer = 0
+    Private EasyTierStatusLastIp As String = Nothing
+    Private EasyTierStatusPeerCount As Integer = -1
+
+    ''' <summary>
+    ''' 初始化主页底部的组网状态条，只执行一次。
+    ''' </summary>
+    Private Sub InitEasyTierStatus()
+        If IsEasyTierStatusInited Then Return
+        IsEasyTierStatusInited = True
+
+        EasyTierStatusHandler = AddressOf OnEasyTierStatusChanged
+        ModEasyTier.AddStateHandler(EasyTierStatusHandler)
+
+        EasyTierStatusTimer = New DispatcherTimer With {.Interval = TimeSpan.FromMilliseconds(2000)}
+        AddHandler EasyTierStatusTimer.Tick, Sub() RefreshEasyTierStatusAsync()
+        EasyTierStatusTimer.Start()
+
+        UpdateEasyTierStatusVisual()
+        RefreshEasyTierStatusAsync()
+    End Sub
+
+    Private Sub OnEasyTierStatusChanged(NewState As ModEasyTier.EasyTierStates)
+        RunInUi(Sub() UpdateEasyTierStatusVisual())
+    End Sub
+
+    ''' <summary>
+    ''' 依据当前状态更新启动界面里的组网状态条。未运行或不在启动页面时不显示。
+    ''' </summary>
+    Private Sub UpdateEasyTierStatusVisual()
+        '仅当启动中页面可见时才展示，避免影响主页布局
+        Dim IsLaunchingPage As Boolean = PanLaunching.Visibility = Visibility.Visible
+        Select Case ModEasyTier.State
+            Case ModEasyTier.EasyTierStates.Running
+                PanLaunchingEasyTier.Visibility = If(IsLaunchingPage, Visibility.Visible, Visibility.Collapsed)
+                If Not IsLaunchingPage Then Return
+                EllipseLaunchingEasyTier.Fill = BrushEasyTierRunning
+                Dim Text As String = "组网运行中"
+                If Not String.IsNullOrWhiteSpace(EasyTierStatusLastIp) Then Text &= " · " & EasyTierStatusLastIp
+                If EasyTierStatusPeerCount > 0 Then Text &= $" · {EasyTierStatusPeerCount} 个节点"
+                LabLaunchingEasyTier.Text = Text
+            Case ModEasyTier.EasyTierStates.Starting
+                PanLaunchingEasyTier.Visibility = If(IsLaunchingPage, Visibility.Visible, Visibility.Collapsed)
+                If Not IsLaunchingPage Then Return
+                EllipseLaunchingEasyTier.Fill = BrushEasyTierStarting
+                LabLaunchingEasyTier.Text = "组网启动中…"
+            Case Else
+                PanLaunchingEasyTier.Visibility = Visibility.Collapsed
+        End Select
+    End Sub
+
+    ''' <summary>
+    ''' 后台读取虚拟 IP 与节点数，回到 UI 线程刷新状态条。
+    ''' </summary>
+    Private Sub RefreshEasyTierStatusAsync()
+        If EasyTierStatusRefreshing Then Return
+        Dim CurrentState = ModEasyTier.State
+        If CurrentState <> ModEasyTier.EasyTierStates.Running AndAlso CurrentState <> ModEasyTier.EasyTierStates.Starting Then
+            UpdateEasyTierStatusVisual()
+            Return
+        End If
+        EasyTierStatusRefreshing = True
+        RunInNewThread(
+        Sub()
+            Dim Ip As String = Nothing
+            Dim PeerCount As Integer = -1
+            Try
+                If ModEasyTier.IsRunning Then
+                    Dim NodeInfo = ModEasyTier.GetNodeInfo()
+                    If NodeInfo IsNot Nothing Then
+                        Ip = NodeInfo.SelectToken("ipv4_addr")?.ToString()
+                        If Not String.IsNullOrWhiteSpace(Ip) Then Ip = Ip.Split("/"c)(0).Trim()
+                    End If
+                    '节点列表开销较大，降低到约 1/2 的频率
+                    EasyTierStatusPeerTick += 1
+                    If EasyTierStatusPeerTick >= 2 Then
+                        EasyTierStatusPeerTick = 0
+                        Dim Peers = ModEasyTier.GetPeers()
+                        If Peers IsNot Nothing Then PeerCount = Peers.Count
+                    End If
+                End If
+            Catch ex As Exception
+                Logger.Warn(ex, "刷新主页组网状态失败")
+            Finally
+                EasyTierStatusRefreshing = False
+            End Try
+            RunInUi(
+            Sub()
+                If Ip IsNot Nothing Then EasyTierStatusLastIp = Ip
+                If PeerCount >= 0 Then EasyTierStatusPeerCount = PeerCount
+                UpdateEasyTierStatusVisual()
+            End Sub)
+        End Sub, "EasyTier Launch Status")
+    End Sub
+
+#End Region
 
 End Class

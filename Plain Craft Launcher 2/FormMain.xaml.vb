@@ -407,6 +407,27 @@ Public Class FormMain
                 Logger.Info($"DPI：{DPI}，系统版本：{Environment.OSVersion.VersionString}，PCL 位置：{PathExe}")
             End Sub, , True)
         }, "Form Show")
+        '首次使用本版本时提示 EasyTier 已内置。
+        '刻意放在这里而不是版本升降级钩子里：那时主窗体的消息队列还没就绪，弹窗会被吞掉。
+        If Not Settings.Get(Of Boolean)("EasyTierIntroShown") Then
+            Settings.Set("EasyTierIntroShown", True)
+            RunInNewThread(
+            Sub()
+                Threading.Thread.Sleep(1400) '等待入场动画结束，避免弹窗与动画抢焦点
+                RunInUi(
+                Sub()
+                    MyMsgBox(
+                        "EasyTier 组网功能已经合并进 PCL 了。" & vbCrLf & vbCrLf &
+                        "以前需要单独下载的联机模块，现在直接内置。可以在顶部「组网」标签页中：" & vbCrLf &
+                        "· 填写网络名称与密钥" & vbCrLf &
+                        "· 启动 / 停止组网" & vbCrLf &
+                        "· 查看本机信息与全部在线节点" & vbCrLf &
+                        "· 查看运行日志" & vbCrLf & vbCrLf &
+                        "另外，启动游戏时如果组网还没开启，PCL 会询问是否一并启动。",
+                        "组网功能已内置")
+                End Sub)
+            End Sub, "EasyTier Intro")
+        End If
         'Timer 启动
         AniStart()
         TimerMainStart()
@@ -541,10 +562,9 @@ Public Class FormMain
             Settings.Reset("LaunchAdvanceJvm")
             Logger.Info("已重置 JVM 参数设置")
         End If
-        '输出更新日志
-        If LastVersionCode <= 0 Then Return
-        If HighestVersionCode >= VersionCode Then Return
-        ShowUpdateLog(HighestVersionCode)
+        '本定制版不合并 PCL 主线，因此不再展示通用的「PCL 已更新至 X」更新日志。
+        'EasyTier 内置提示改在窗口加载完成后单独触发（见 FormMain_Loaded），
+        '这样弹窗时主窗体的消息队列已经就绪，能够正常显示。
     End Sub
     Private Sub DowngradeSub(LastVersionCode As Integer)
         Logger.Info($"版本号从 {LastVersionCode} 降低到 {VersionCode}")
@@ -615,6 +635,9 @@ Public Class FormMain
         On Error Resume Next
         IsProgramEnding = True
         AniControlEnabled += 1
+        '结束由 PCL 拉起的 EasyTier 核心，避免关闭启动器后留下后台进程
+        'StopCore 内部已做异常保护，且本方法启用了 On Error Resume Next，故不再包 Try
+        ModEasyTier.StopCore()
         If IsUpdateWaitingRestart Then UpdateRestart(False)
         If ReturnCode = ProcessReturnValues.Exception Then
             If Not IsLogShown Then
@@ -1226,6 +1249,10 @@ Public Class FormMain
         ''' 帮助详情。这是一个副页面。
         ''' </summary>
         HelpDetail = 9
+        ''' <summary>
+        ''' 组网。
+        ''' </summary>
+        EasyTier = 10
     End Enum
     ''' <summary>
     ''' 次要页面种类。其数值必须与 StackPanel 中的下标一致。
@@ -1254,6 +1281,8 @@ Public Class FormMain
         InstanceMod = 3
         InstanceModDisabled = 4
         InstanceExport = 5
+        EasyTierOverview = 0
+        EasyTierLog = 1
     End Enum
     ''' <summary>
     ''' 获取次级页面的名称。若并非次级页面则返回空字符串，故可以以此判断是否为次级页面。
@@ -1311,6 +1340,9 @@ Public Class FormMain
                 Case PageType.Other
                     If FrmOtherLeft Is Nothing Then FrmOtherLeft = New PageOtherLeft
                     Return FrmOtherLeft.PageID
+                Case PageType.EasyTier
+                    If FrmEasyTierLeft Is Nothing Then FrmEasyTierLeft = New PageEasyTierLeft
+                    Return FrmEasyTierLeft.PageID
                 Case PageType.InstanceSetup
                     If FrmInstanceLeft Is Nothing Then FrmInstanceLeft = New PageInstanceLeft
                     Return FrmInstanceLeft.PageID
@@ -1362,6 +1394,23 @@ Public Class FormMain
 
     '引发实际页面切换的入口
     Private IsChangingPage As Boolean = False
+
+    ''' <summary>
+    ''' 获取页面种类对应的顶部导航按钮下标。
+    ''' 由于「组网」复用了原「更多」的按钮位置，不能直接用 PageType 的数值作为下标。
+    ''' </summary>
+    Private Function PageTitleIndex(Page As PageType) As Integer
+        Select Case Page
+            Case PageType.Launch : Return 0
+            Case PageType.Download : Return 1
+            Case PageType.Link : Return 2
+            Case PageType.Setup : Return 3
+            Case PageType.Other : Return 4
+            Case PageType.EasyTier : Return 5
+            Case Else : Return -1
+        End Select
+    End Function
+
     ''' <summary>
     ''' 切换页面，并引起对应选择 UI 的改变。
     ''' </summary>
@@ -1375,7 +1424,10 @@ Public Class FormMain
             '切换到主页面
             PageChangeExit()
             IsChangingPage = True '防止下面的勾选直接触发了 PageChangeActual
-            CType(PanTitleSelect.Children(Stack), MyRadioButton).SetChecked(True, True, PageNameGet(PageCurrent) = "")
+            Dim TitleIndex As Integer = PageTitleIndex(Stack.Page)
+            If TitleIndex >= 0 AndAlso TitleIndex < PanTitleSelect.Children.Count Then
+                CType(PanTitleSelect.Children(TitleIndex), MyRadioButton).SetChecked(True, True, PageNameGet(PageCurrent) = "")
+            End If
             IsChangingPage = False
             Select Case Stack.Page
                 Case PageType.Download
@@ -1387,6 +1439,9 @@ Public Class FormMain
                 Case PageType.Other
                     If FrmOtherLeft Is Nothing Then FrmOtherLeft = New PageOtherLeft
                     CType(FrmOtherLeft.PanItem.Children(SubType), MyListItem).SetChecked(True, True, Stack = PageCurrent)
+                Case PageType.EasyTier
+                    If FrmEasyTierLeft Is Nothing Then FrmEasyTierLeft = New PageEasyTierLeft
+                    CType(FrmEasyTierLeft.PanItem.Children(SubType), MyListItem).SetChecked(True, True, Stack = PageCurrent)
             End Select
             PageChangeActual(Stack, SubType)
         Else
@@ -1402,7 +1457,7 @@ Public Class FormMain
     ''' <summary>
     ''' 通过点击导航栏改变页面。
     ''' </summary>
-    Private Sub BtnTitleSelect_Click(sender As MyRadioButton, raiseByMouse As Boolean) Handles BtnTitleSelect0.Check, BtnTitleSelect1.Check, BtnTitleSelect2.Check, BtnTitleSelect3.Check, BtnTitleSelect4.Check
+    Private Sub BtnTitleSelect_Click(sender As MyRadioButton, raiseByMouse As Boolean) Handles BtnTitleSelect0.Check, BtnTitleSelect1.Check, BtnTitleSelect2.Check, BtnTitleSelect3.Check, BtnTitleSelect4.Check, BtnTitleSelect5.Check
         If IsChangingPage Then Return
         PageChangeActual(Val(sender.Tag))
     End Sub
@@ -1492,6 +1547,9 @@ Public Class FormMain
                 Case PageType.Other '更多
                     If FrmOtherLeft Is Nothing Then FrmOtherLeft = New PageOtherLeft
                     PageChangeAnim(FrmOtherLeft, FrmOtherLeft.PageGet(SubType))
+                Case PageType.EasyTier '组网
+                    If FrmEasyTierLeft Is Nothing Then FrmEasyTierLeft = New PageEasyTierLeft
+                    PageChangeAnim(FrmEasyTierLeft, FrmEasyTierLeft.PageGet(SubType))
                 Case PageType.InstanceSelect '版本选择
                     If FrmSelectLeft Is Nothing Then FrmSelectLeft = New PageSelectLeft
                     If FrmSelectRight Is Nothing Then FrmSelectRight = New PageSelectRight
